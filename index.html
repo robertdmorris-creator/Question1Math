@@ -1,477 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Play, Check, ChevronRight, Users, Utensils, Slice, Eye, Lightbulb, Maximize, Minimize } from 'lucide-react';
-
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-3xl shadow-xl p-8 ${className}`}>
-    {children}
-  </div>
-);
-
-// Smart Board Friendly Button: Larger, tactile feel, bigger text
-const Button = ({ onClick, children, disabled, className = "" }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all transform active:scale-95 flex items-center justify-center gap-3 ${
-      disabled 
-        ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
-        : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-    } ${className}`}
-  >
-    {children}
-  </button>
-);
-
-const StackedFraction = ({ num, den, colorClass = "text-gray-800", borderClass = "border-gray-800", scale = "scale-100" }) => (
-  <div className={`flex flex-col items-center justify-center leading-none ${colorClass} ${scale}`}>
-    <span className={`border-b-4 ${borderClass} px-2 pb-1 mb-1 text-2xl font-bold`}>{num}</span>
-    <span className="text-2xl font-bold">{den}</span>
-  </div>
-);
-
-const SandwichReview = ({ onComplete }) => {
-  const [showVisuals, setShowVisuals] = useState(false);
-  const [grouped, setGrouped] = useState(false);
-
-  return (
-    <div className="space-y-8">
-      <div className="bg-yellow-50 border-l-8 border-yellow-400 p-8 rounded-2xl">
-        <h2 className="text-3xl font-bold text-yellow-800 mb-4">🥪 The Sandwich Problem</h2>
-        <p className="text-2xl text-yellow-900 leading-relaxed">
-          Mrs. Cole needs to make lunch for <strong>12 children</strong>. 
-          Each child gets <strong>1/2</strong> of a sandwich.
-        </p>
-        <p className="mt-6 text-3xl font-bold text-blue-700">
-          How many whole sandwiches does she need?
-        </p>
-      </div>
-
-      <div className="bg-white border-2 border-gray-100 p-8 rounded-3xl min-h-[400px] flex flex-col items-center justify-center relative shadow-inner">
-        {!showVisuals && (
-          <div className="text-center p-10">
-            <p className="text-gray-500 mb-8 text-2xl italic">Ask students to visualize the 12 children...</p>
-            <Button onClick={() => setShowVisuals(true)}>
-              <Eye className="w-8 h-8" /> Show Visual Model
-            </Button>
-          </div>
-        )}
-
-        {showVisuals && (
-          <>
-            <div className={`grid transition-all duration-1000 ${grouped ? 'grid-cols-6 gap-8' : 'grid-cols-4 lg:grid-cols-6 gap-6'}`}>
-              {[...Array(12)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`relative transition-all duration-1000 ${
-                    grouped 
-                      ? i % 2 === 0 ? 'translate-x-6 z-10' : '-translate-x-6 opacity-50' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex flex-col items-center transform scale-125 origin-center">
-                    <Users className="w-12 h-12 text-gray-400 mb-2" />
-                    <div className="w-20 h-20 bg-orange-100 border-4 border-orange-300 rounded-xl flex items-center justify-center relative overflow-hidden shadow-md">
-                      <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-orange-200 border-r-2 border-orange-300"></div>
-                      <div className="relative z-10 font-bold text-xl">
-                        <StackedFraction num="1" den="2" colorClass="text-orange-900" borderClass="border-orange-900" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {grouped && (
-              <div className="mt-12 text-4xl font-extrabold text-green-600 animate-bounce bg-white px-8 py-4 rounded-full shadow-2xl border-4 border-green-200">
-                = 6 Whole Sandwiches!
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {showVisuals && (
-        <div className="flex justify-center gap-6">
-          <Button onClick={() => setGrouped(!grouped)} className={grouped ? "bg-gray-500 hover:bg-gray-600" : ""}>
-            {grouped ? "Separate Them" : "Combine Halves"}
-          </Button>
-          {grouped && (
-            <Button className="bg-green-600 hover:bg-green-700 border-green-800" onClick={onComplete}>
-              Next Activity <ChevronRight className="inline w-8 h-8" />
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const SlicedUp = ({ onComplete }) => {
-  const [step, setStep] = useState(0); 
-
-  return (
-    <div className="space-y-8">
-      <div className="bg-orange-50 border-l-8 border-orange-500 p-8 rounded-2xl">
-        <h2 className="text-3xl font-bold text-orange-900 mb-2">🍊 Sliced Up</h2>
-        <p className="text-2xl text-orange-800">Let's verify our estimation skills!</p>
-      </div>
-
-      {step === 0 && (
-        <div className="text-center space-y-8">
-           <div className="aspect-video bg-gray-900 rounded-3xl flex items-center justify-center text-white relative overflow-hidden group shadow-2xl max-w-4xl mx-auto">
-            <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{backgroundImage: 'url("https://gfletchy.com/wp-content/uploads/2016/08/sliced-up-act-1.jpg")'}}></div>
-            <div className="z-10 flex flex-col items-center p-10 bg-black/60 rounded-3xl backdrop-blur-sm">
-               <p className="mb-6 text-3xl font-bold">Watch Act 1</p>
-               <a 
-                 href="https://gfletchy.com/sliced-up/" 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="flex items-center gap-4 bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-full font-bold text-2xl transition-transform hover:scale-105 shadow-xl"
-               >
-                 <Play className="w-10 h-10 fill-current" /> Play Video
-               </a>
-            </div>
-          </div>
-          
-          <div className="p-8 bg-white rounded-3xl shadow-sm border-2 border-gray-100">
-            <h3 className="text-3xl font-bold mb-8 text-gray-800">How many total oranges did you see?</h3>
-            <Button onClick={() => setStep(1)}>Reveal Answer</Button>
-          </div>
-        </div>
-      )}
-
-      {step >= 1 && (
-        <div className="space-y-8 animate-fade-in">
-          <div className="flex justify-center gap-6 flex-wrap py-8">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="relative w-32 h-32">
-                {/* Whole Orange State */}
-                {step === 1 && (
-                  <div className="w-full h-full bg-orange-500 rounded-full border-[6px] border-orange-600 shadow-2xl flex items-center justify-center text-white font-bold text-4xl animate-fade-in">
-                    1
-                  </div>
-                )}
-                
-                {/* Sliced State (Halves - Horizontal Cut) */}
-                {step >= 2 && (
-                   <div className="w-full h-full relative animate-fade-in flex flex-col justify-between">
-                      {/* Top Half */}
-                      <div className="w-full h-[48%] bg-orange-400 rounded-t-full border-4 border-b-0 border-orange-600 flex items-end justify-center pb-2">
-                         <div className="scale-90 text-white font-bold"><StackedFraction num="1" den="2" colorClass="text-white" borderClass="border-white" /></div>
-                      </div>
-                      {/* Bottom Half */}
-                      <div className="w-full h-[48%] bg-orange-400 rounded-b-full border-4 border-t-0 border-orange-600 flex items-start justify-center pt-2">
-                         <div className="scale-90 text-white font-bold"><StackedFraction num="1" den="2" colorClass="text-white" borderClass="border-white" /></div>
-                      </div>
-                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {step === 1 && (
-            <div className="text-center space-y-6">
-              <p className="text-4xl font-bold text-gray-800">5 Whole Oranges</p>
-              <Button onClick={() => setStep(2)}>
-                 <Slice className="w-8 h-8" /> Slice them up!
-              </Button>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="text-center space-y-6 bg-blue-50 p-8 rounded-3xl border-4 border-blue-100 shadow-lg">
-               <Lightbulb className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-               <h3 className="text-3xl font-bold text-blue-900">What math do you see?</h3>
-               <p className="text-2xl text-blue-800 max-w-2xl mx-auto">Look at the sliced oranges. What multiplication problems could you write about this image?</p>
-               <Button onClick={() => setStep(3)} className="bg-purple-600 hover:bg-purple-700 border-purple-800 mt-4">
-                 Reveal the Math
-               </Button>
-            </div>
-          )}
-
-           {step === 3 && (
-            <div className="space-y-6 animate-fade-in">
-               <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white p-8 rounded-3xl border-l-8 border-green-500 shadow-lg">
-                    <p className="text-lg text-gray-500 font-bold uppercase tracking-wider mb-2">View 1: Counting Slices</p>
-                    <p className="text-3xl font-bold text-gray-800 leading-relaxed">
-                      5 Oranges × 2 Slices = <br/><span className="text-green-600 text-4xl">10 Slices</span>
-                    </p>
-                  </div>
-                  <div className="bg-white p-8 rounded-3xl border-l-8 border-orange-500 shadow-lg">
-                    <p className="text-lg text-gray-500 font-bold uppercase tracking-wider mb-2">View 2: Parts of a Whole</p>
-                    <p className="text-3xl font-bold text-gray-800 leading-relaxed">
-                      10 Slices × 1/2 size = <br/><span className="text-orange-600 text-4xl">5 Whole Oranges</span>
-                    </p>
-                  </div>
-               </div>
-               
-              <div className="flex justify-center pt-8">
-                <Button className="bg-green-600 hover:bg-green-700 border-green-800" onClick={onComplete}>
-                  Go to Fruit Challenge <ChevronRight className="inline w-8 h-8" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const FruitSection = ({ fruitName, totalStudents, cutInto, icon, colorClass, baseCount = 5 }) => {
-  const [step, setStep] = useState(0); 
-  
-  const cut = step >= 2;
-  const showAnswer = step === 3;
-  const totalSlices = cut ? baseCount * cutInto : baseCount;
-  const isEnough = totalSlices >= totalStudents;
-
-  return (
-    <Card className="border-t-8 border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <span className="text-5xl">{icon}</span>
-          <h3 className={`text-4xl font-bold ${colorClass}`}>{fruitName}</h3>
-        </div>
-        <div className="text-xl font-bold bg-gray-100 px-4 py-2 rounded-xl">
-          {baseCount} Whole
-        </div>
-      </div>
-
-      <div className="mb-8 space-y-4">
-        <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-100">
-          <p className="text-gray-500 font-bold uppercase text-sm mb-2">Step 1: Planning</p>
-          <p className="text-2xl mb-1">Cut into <strong>{cutInto}ths</strong></p>
-          <p className="text-2xl">Needs <strong>{totalStudents}</strong> slices</p>
-        </div>
-        {step === 0 && (
-           <p className="text-xl text-blue-600 italic animate-pulse font-medium text-center py-2">Draw your visual on paper first!</p>
-        )}
-      </div>
-
-      {/* Visualization Area */}
-      <div className="flex flex-wrap gap-4 mb-8 justify-center min-h-[140px] items-center bg-gray-50 rounded-2xl border-4 border-dashed border-gray-300 p-6">
-        {step === 0 && (
-           <div className="text-gray-400 font-bold text-2xl">Visual Hidden</div>
-        )}
-        
-        {step > 0 && [...Array(baseCount)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`
-              transition-all duration-500 relative
-              w-20 h-20
-              rounded-full flex items-center justify-center text-white font-bold shadow-lg
-              ${fruitName === 'Bananas' ? 'rounded-none rounded-3xl' : ''}
-              animate-fade-in
-            `}
-            style={{
-              backgroundColor: fruitName === 'Oranges' ? '#f97316' : fruitName === 'Apples' ? '#ef4444' : '#eab308'
-            }}
-          >
-            {/* Slices Overlay */}
-            {!cut && <span className="text-3xl drop-shadow-md">1</span>}
-            {cut && (
-               <div className="absolute inset-0 flex items-center justify-center">
-                 {/* CSS Tricks for slices */}
-                 {fruitName === 'Bananas' && <div className="w-1.5 h-full bg-yellow-600/80"></div>}
-                 {fruitName === 'Oranges' && (
-                    <>
-                      <div className="absolute w-full h-1 bg-orange-700/80"></div>
-                      <div className="absolute w-1 h-full bg-orange-700/80"></div>
-                    </>
-                 )}
-                 {fruitName === 'Apples' && (
-                    <>
-                      <div className="absolute w-full h-1 bg-red-900/60"></div>
-                      <div className="absolute w-1 h-full bg-red-900/60"></div>
-                      <div className="absolute w-full h-1 bg-red-900/60 rotate-45"></div>
-                      <div className="absolute w-1 h-full bg-red-900/60 rotate-45"></div>
-                    </>
-                 )}
-               </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        {step === 0 && (
-          <Button onClick={() => setStep(1)} className="w-full bg-gray-600 hover:bg-gray-700 border-gray-800">
-            <Eye className="w-6 h-6" /> Reveal Visual
-          </Button>
-        )}
-
-        {step === 1 && (
-           <Button onClick={() => setStep(2)} className="w-full bg-indigo-600 hover:bg-indigo-700 border-indigo-800">
-             <Slice className="w-6 h-6" /> Cut Fruit
-           </Button>
-        )}
-
-        {step === 2 && (
-           <Button onClick={() => setStep(3)} className="w-full bg-green-600 hover:bg-green-700 border-green-800">
-             <Check className="w-6 h-6" /> Reveal Answer
-           </Button>
-        )}
-
-        {showAnswer && (
-          <div className={`p-6 text-center font-bold rounded-2xl border-4 ${isEnough ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'} animate-fade-in shadow-lg`}>
-            <div className="text-3xl mb-2">Total: {totalSlices} Slices</div>
-            <div className="text-xl font-normal">
-                {isEnough 
-                  ? `Great! ${totalSlices} ≥ ${totalStudents}` 
-                  : `Oh no! ${totalSlices} < ${totalStudents}`}
-            </div>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-};
-
-const FruitBowl = () => {
-  return (
-    <div className="space-y-8">
-      <div className="bg-blue-50 border-l-8 border-blue-500 p-8 rounded-2xl">
-        <h2 className="text-3xl font-bold text-blue-900 mb-2">🍎 Fruit Bowl Challenge</h2>
-        <p className="text-2xl text-blue-800 leading-relaxed">
-          Mrs. Smith has <strong>24 Students</strong>. She bought <strong>5 of each fruit</strong>.
-        </p>
-      </div>
-
-      <div className="grid xl:grid-cols-3 gap-8">
-        <FruitSection 
-          fruitName="Oranges" 
-          totalStudents={24} 
-          cutInto={4} 
-          baseCount={5}
-          icon="🍊"
-          colorClass="text-orange-500"
-        />
-        <FruitSection 
-          fruitName="Apples" 
-          totalStudents={24} 
-          cutInto={8} 
-          baseCount={5}
-          icon="🍎"
-          colorClass="text-red-500"
-        />
-        <FruitSection 
-          fruitName="Bananas" 
-          totalStudents={24} 
-          cutInto={2} 
-          baseCount={5}
-          icon="🍌"
-          colorClass="text-yellow-600"
-        />
-      </div>
-    </div>
-  );
-};
-
-export default function LessonPlan() {
-  const [currentSection, setCurrentSection] = useState('intro');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      if(containerRef.current) {
-        containerRef.current.requestFullscreen().catch(err => {
-          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-        });
-      }
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  const renderSection = () => {
-    switch(currentSection) {
-      case 'intro':
-        return (
-          <div className="text-center space-y-12 py-16">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-blue-700 mb-6 drop-shadow-sm">
-              Fractions in the Real World
-            </h1>
-            <p className="text-3xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Today we are going to explore how we use multiplication and fractions to plan a lunch and a party!
-            </p>
-            <div className="flex justify-center pt-8">
-              <Button onClick={() => setCurrentSection('sandwich')} className="text-3xl px-16 py-8 rounded-3xl animate-pulse hover:animate-none">
-                Start Lesson <ChevronRight className="w-8 h-8 ml-2" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-20 opacity-30 select-none">
-              <div className="text-8xl animate-bounce" style={{animationDelay: '0s'}}>🥪</div>
-              <div className="text-8xl animate-bounce" style={{animationDelay: '0.2s'}}>🍊</div>
-              <div className="text-8xl animate-bounce" style={{animationDelay: '0.4s'}}>🍌</div>
-            </div>
-          </div>
-        );
-      case 'sandwich':
-        return <SandwichReview onComplete={() => setCurrentSection('slicedup')} />;
-      case 'slicedup':
-        return <SlicedUp onComplete={() => setCurrentSection('fruitbowl')} />;
-      case 'fruitbowl':
-        return <FruitBowl />;
-      default:
-        return <div>Unknown Section</div>;
-    }
-  };
-
-  return (
-    <div 
-      ref={containerRef}
-      className={`min-h-screen bg-gray-50 font-sans text-gray-800 transition-all duration-300 ${isFullscreen ? 'p-8 overflow-y-auto' : 'p-4 md:p-8'}`}
-    >
-      <div className={`mx-auto transition-all duration-300 ${isFullscreen ? 'max-w-7xl' : 'max-w-6xl'}`}>
-        
-        {/* Header Navigation */}
-        <div className="flex justify-between items-center mb-10 bg-white p-6 rounded-3xl shadow-md border border-gray-100">
-          <div className="font-bold text-gray-500 text-xl tracking-wide uppercase">Grade 5 Unit 5 • Part 2</div>
-          
-          <div className="flex items-center gap-6">
-            <div className="flex gap-3 bg-gray-100 p-2 rounded-full">
-               <button 
-                onClick={() => setCurrentSection('sandwich')}
-                className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'sandwich' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
-                title="Sandwich Problem"
-              />
-              <button 
-                onClick={() => setCurrentSection('slicedup')}
-                className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'slicedup' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
-                title="Sliced Up Video"
-              />
-              <button 
-                onClick={() => setCurrentSection('fruitbowl')}
-                className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'fruitbowl' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
-                title="Fruit Bowl Challenge"
-              />
-            </div>
-
-            <button
-              onClick={toggleFullScreen}
-              className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors border-2 border-transparent hover:border-gray-200"
-              title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
-            >
-              {isFullscreen ? <Minimize className="w-8 h-8" /> : <Maximize className="w-8 h-8" />}
-            </button>
-          </div>
-        </div>
-
-        {renderSection()}
-      </div>
-      <style>{`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractions in the Real World</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Load Babel for JSX support -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -479,7 +23,524 @@ export default function LessonPlan() {
         .animate-fade-in {
           animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-      `}</style>
-    </div>
-  );
-}
+        /* Custom scrollbar for better touch feel */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // --- Icons (Inline SVGs to remove dependency issues) ---
+        const IconBase = ({ children, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Play = ({ className }) => <IconBase className={className}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Check = ({ className }) => <IconBase className={className}><polyline points="20 6 9 17 4 12"/></IconBase>;
+        const ChevronRight = ({ className }) => <IconBase className={className}><polyline points="9 18 15 12 9 6"/></IconBase>;
+        const Users = ({ className }) => <IconBase className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconBase>;
+        const Slice = ({ className }) => <IconBase className={className}><path d="m8 19-6-6"/><path d="m2 13 13-13 7 7-13 13z"/><path d="m11 16 6-6"/></IconBase>;
+        const Eye = ({ className }) => <IconBase className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></IconBase>;
+        const Lightbulb = ({ className }) => <IconBase className={className}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2 1.5-3.5A6 6 0 0 0 6 8c0 1 .5 2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></IconBase>;
+        const Maximize = ({ className }) => <IconBase className={className}><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></IconBase>;
+        const Minimize = ({ className }) => <IconBase className={className}><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></IconBase>;
+
+
+        // --- Components ---
+
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-white rounded-3xl shadow-xl p-8 ${className}`}>
+                {children}
+            </div>
+        );
+
+        // Smart Board Friendly Button: Larger, tactile feel, bigger text
+        const Button = ({ onClick, children, disabled, className = "" }) => (
+            <button
+                onClick={onClick}
+                disabled={disabled}
+                className={`px-8 py-4 rounded-2xl font-bold text-xl transition-all transform active:scale-95 flex items-center justify-center gap-3 ${
+                disabled 
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+                    : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
+                } ${className}`}
+            >
+                {children}
+            </button>
+        );
+
+        const StackedFraction = ({ num, den, colorClass = "text-gray-800", borderClass = "border-gray-800", scale = "scale-100" }) => (
+            <div className={`flex flex-col items-center justify-center leading-none ${colorClass} ${scale}`}>
+                <span className={`border-b-4 ${borderClass} px-2 pb-1 mb-1 text-2xl font-bold`}>{num}</span>
+                <span className="text-2xl font-bold">{den}</span>
+            </div>
+        );
+
+        const SandwichReview = ({ onComplete }) => {
+            const [showVisuals, setShowVisuals] = useState(false);
+            const [grouped, setGrouped] = useState(false);
+
+            return (
+                <div className="space-y-8">
+                <div className="bg-yellow-50 border-l-8 border-yellow-400 p-8 rounded-2xl">
+                    <h2 className="text-3xl font-bold text-yellow-800 mb-4">🥪 The Sandwich Problem</h2>
+                    <p className="text-2xl text-yellow-900 leading-relaxed">
+                    Mrs. Cole needs to make lunch for <strong>12 children</strong>. 
+                    Each child gets <strong>1/2</strong> of a sandwich.
+                    </p>
+                    <p className="mt-6 text-3xl font-bold text-blue-700">
+                    How many whole sandwiches does she need?
+                    </p>
+                </div>
+
+                <div className="bg-white border-2 border-gray-100 p-8 rounded-3xl min-h-[400px] flex flex-col items-center justify-center relative shadow-inner">
+                    {!showVisuals && (
+                    <div className="text-center p-10">
+                        <p className="text-gray-500 mb-8 text-2xl italic">Ask students to visualize the 12 children...</p>
+                        <Button onClick={() => setShowVisuals(true)}>
+                        <Eye className="w-8 h-8" /> Show Visual Model
+                        </Button>
+                    </div>
+                    )}
+
+                    {showVisuals && (
+                    <>
+                        <div className={`grid transition-all duration-1000 ${grouped ? 'grid-cols-6 gap-8' : 'grid-cols-4 lg:grid-cols-6 gap-6'}`}>
+                        {[...Array(12)].map((_, i) => (
+                            <div 
+                            key={i} 
+                            className={`relative transition-all duration-1000 ${
+                                grouped 
+                                ? i % 2 === 0 ? 'translate-x-6 z-10' : '-translate-x-6 opacity-50' 
+                                : ''
+                            }`}
+                            >
+                            <div className="flex flex-col items-center transform scale-125 origin-center">
+                                <Users className="w-12 h-12 text-gray-400 mb-2" />
+                                <div className="w-20 h-20 bg-orange-100 border-4 border-orange-300 rounded-xl flex items-center justify-center relative overflow-hidden shadow-md">
+                                <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-orange-200 border-r-2 border-orange-300"></div>
+                                <div className="relative z-10 font-bold text-xl">
+                                    <StackedFraction num="1" den="2" colorClass="text-orange-900" borderClass="border-orange-900" />
+                                </div>
+                                </div>
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                        
+                        {grouped && (
+                        <div className="mt-12 text-4xl font-extrabold text-green-600 animate-bounce bg-white px-8 py-4 rounded-full shadow-2xl border-4 border-green-200">
+                            = 6 Whole Sandwiches!
+                        </div>
+                        )}
+                    </>
+                    )}
+                </div>
+
+                {showVisuals && (
+                    <div className="flex justify-center gap-6">
+                    <Button onClick={() => setGrouped(!grouped)} className={grouped ? "bg-gray-500 hover:bg-gray-600" : ""}>
+                        {grouped ? "Separate Them" : "Combine Halves"}
+                    </Button>
+                    {grouped && (
+                        <Button className="bg-green-600 hover:bg-green-700 border-green-800" onClick={onComplete}>
+                        Next Activity <ChevronRight className="inline w-8 h-8" />
+                        </Button>
+                    )}
+                    </div>
+                )}
+                </div>
+            );
+        };
+
+        const SlicedUp = ({ onComplete }) => {
+            const [step, setStep] = useState(0); 
+
+            return (
+                <div className="space-y-8">
+                <div className="bg-orange-50 border-l-8 border-orange-500 p-8 rounded-2xl">
+                    <h2 className="text-3xl font-bold text-orange-900 mb-2">🍊 Sliced Up</h2>
+                    <p className="text-2xl text-orange-800">Let's verify our estimation skills!</p>
+                </div>
+
+                {step === 0 && (
+                    <div className="text-center space-y-8">
+                    <div className="aspect-video bg-gray-900 rounded-3xl flex items-center justify-center text-white relative overflow-hidden group shadow-2xl max-w-4xl mx-auto">
+                        <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{backgroundImage: 'url("https://gfletchy.com/wp-content/uploads/2016/08/sliced-up-act-1.jpg")'}}></div>
+                        <div className="z-10 flex flex-col items-center p-10 bg-black/60 rounded-3xl backdrop-blur-sm">
+                        <p className="mb-6 text-3xl font-bold">Watch Act 1</p>
+                        <a 
+                            href="https://gfletchy.com/sliced-up/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-full font-bold text-2xl transition-transform hover:scale-105 shadow-xl"
+                        >
+                            <Play className="w-10 h-10 fill-current" /> Play Video
+                        </a>
+                        </div>
+                    </div>
+                    
+                    <div className="p-8 bg-white rounded-3xl shadow-sm border-2 border-gray-100">
+                        <h3 className="text-3xl font-bold mb-8 text-gray-800">How many total oranges did you see?</h3>
+                        <Button onClick={() => setStep(1)}>Reveal Answer</Button>
+                    </div>
+                    </div>
+                )}
+
+                {step >= 1 && (
+                    <div className="space-y-8 animate-fade-in">
+                    <div className="flex justify-center gap-6 flex-wrap py-8">
+                        {[...Array(5)].map((_, i) => (
+                        <div key={i} className="relative w-32 h-32">
+                            {/* Whole Orange State */}
+                            {step === 1 && (
+                            <div className="w-full h-full bg-orange-500 rounded-full border-[6px] border-orange-600 shadow-2xl flex items-center justify-center text-white font-bold text-4xl animate-fade-in">
+                                1
+                            </div>
+                            )}
+                            
+                            {/* Sliced State (Halves - Horizontal Cut) */}
+                            {step >= 2 && (
+                            <div className="w-full h-full relative animate-fade-in flex flex-col justify-between">
+                                {/* Top Half */}
+                                <div className="w-full h-[48%] bg-orange-400 rounded-t-full border-4 border-b-0 border-orange-600 flex items-end justify-center pb-2">
+                                    <div className="scale-90 text-white font-bold"><StackedFraction num="1" den="2" colorClass="text-white" borderClass="border-white" /></div>
+                                </div>
+                                {/* Bottom Half */}
+                                <div className="w-full h-[48%] bg-orange-400 rounded-b-full border-4 border-t-0 border-orange-600 flex items-start justify-center pt-2">
+                                    <div className="scale-90 text-white font-bold"><StackedFraction num="1" den="2" colorClass="text-white" borderClass="border-white" /></div>
+                                </div>
+                            </div>
+                            )}
+                        </div>
+                        ))}
+                    </div>
+                    
+                    {step === 1 && (
+                        <div className="text-center space-y-6">
+                        <p className="text-4xl font-bold text-gray-800">5 Whole Oranges</p>
+                        <Button onClick={() => setStep(2)}>
+                            <Slice className="w-8 h-8" /> Slice them up!
+                        </Button>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="text-center space-y-6 bg-blue-50 p-8 rounded-3xl border-4 border-blue-100 shadow-lg">
+                        <Lightbulb className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+                        <h3 className="text-3xl font-bold text-blue-900">What math do you see?</h3>
+                        <p className="text-2xl text-blue-800 max-w-2xl mx-auto">Look at the sliced oranges. What multiplication problems could you write about this image?</p>
+                        <Button onClick={() => setStep(3)} className="bg-purple-600 hover:bg-purple-700 border-purple-800 mt-4">
+                            Reveal the Math
+                        </Button>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="space-y-6 animate-fade-in">
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white p-8 rounded-3xl border-l-8 border-green-500 shadow-lg">
+                                <p className="text-lg text-gray-500 font-bold uppercase tracking-wider mb-2">View 1: Counting Slices</p>
+                                <p className="text-3xl font-bold text-gray-800 leading-relaxed">
+                                5 Oranges × 2 Slices = <br/><span className="text-green-600 text-4xl">10 Slices</span>
+                                </p>
+                            </div>
+                            <div className="bg-white p-8 rounded-3xl border-l-8 border-orange-500 shadow-lg">
+                                <p className="text-lg text-gray-500 font-bold uppercase tracking-wider mb-2">View 2: Parts of a Whole</p>
+                                <p className="text-3xl font-bold text-gray-800 leading-relaxed">
+                                10 Slices × 1/2 size = <br/><span className="text-orange-600 text-4xl">5 Whole Oranges</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-center pt-8">
+                            <Button className="bg-green-600 hover:bg-green-700 border-green-800" onClick={onComplete}>
+                            Go to Fruit Challenge <ChevronRight className="inline w-8 h-8" />
+                            </Button>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                )}
+                </div>
+            );
+        };
+
+        const FruitSection = ({ fruitName, totalStudents, cutInto, icon, colorClass, baseCount = 5 }) => {
+            const [step, setStep] = useState(0); 
+            
+            const cut = step >= 2;
+            const showAnswer = step === 3;
+            const totalSlices = cut ? baseCount * cutInto : baseCount;
+            const isEnough = totalSlices >= totalStudents;
+
+            return (
+                <Card className="border-t-8 border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                    <span className="text-5xl">{icon}</span>
+                    <h3 className={`text-4xl font-bold ${colorClass}`}>{fruitName}</h3>
+                    </div>
+                    <div className="text-xl font-bold bg-gray-100 px-4 py-2 rounded-xl">
+                    {baseCount} Whole
+                    </div>
+                </div>
+
+                <div className="mb-8 space-y-4">
+                    <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-100">
+                    <p className="text-gray-500 font-bold uppercase text-sm mb-2">Step 1: Planning</p>
+                    <p className="text-2xl mb-1">Cut into <strong>{cutInto}ths</strong></p>
+                    <p className="text-2xl">Needs <strong>{totalStudents}</strong> slices</p>
+                    </div>
+                    {step === 0 && (
+                    <p className="text-xl text-blue-600 italic animate-pulse font-medium text-center py-2">Draw your visual on paper first!</p>
+                    )}
+                </div>
+
+                {/* Visualization Area */}
+                <div className="flex flex-wrap gap-4 mb-8 justify-center min-h-[140px] items-center bg-gray-50 rounded-2xl border-4 border-dashed border-gray-300 p-6">
+                    {step === 0 && (
+                    <div className="text-gray-400 font-bold text-2xl">Visual Hidden</div>
+                    )}
+                    
+                    {step > 0 && [...Array(baseCount)].map((_, i) => (
+                    <div 
+                        key={i} 
+                        className={`
+                        transition-all duration-500 relative
+                        w-20 h-20
+                        rounded-full flex items-center justify-center text-white font-bold shadow-lg
+                        ${fruitName === 'Bananas' ? 'rounded-none rounded-3xl' : ''}
+                        animate-fade-in
+                        `}
+                        style={{
+                        backgroundColor: fruitName === 'Oranges' ? '#f97316' : fruitName === 'Apples' ? '#ef4444' : '#eab308'
+                        }}
+                    >
+                        {/* Slices Overlay */}
+                        {!cut && <span className="text-3xl drop-shadow-md">1</span>}
+                        {cut && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            {/* CSS Tricks for slices */}
+                            {fruitName === 'Bananas' && <div className="w-1.5 h-full bg-yellow-600/80"></div>}
+                            {fruitName === 'Oranges' && (
+                                <>
+                                <div className="absolute w-full h-1 bg-orange-700/80"></div>
+                                <div className="absolute w-1 h-full bg-orange-700/80"></div>
+                                </>
+                            )}
+                            {fruitName === 'Apples' && (
+                                <>
+                                <div className="absolute w-full h-1 bg-red-900/60"></div>
+                                <div className="absolute w-1 h-full bg-red-900/60"></div>
+                                <div className="absolute w-full h-1 bg-red-900/60 rotate-45"></div>
+                                <div className="absolute w-1 h-full bg-red-900/60 rotate-45"></div>
+                                </>
+                            )}
+                        </div>
+                        )}
+                    </div>
+                    ))}
+                </div>
+
+                <div className="space-y-4">
+                    {step === 0 && (
+                    <Button onClick={() => setStep(1)} className="w-full bg-gray-600 hover:bg-gray-700 border-gray-800">
+                        <Eye className="w-6 h-6" /> Reveal Visual
+                    </Button>
+                    )}
+
+                    {step === 1 && (
+                    <Button onClick={() => setStep(2)} className="w-full bg-indigo-600 hover:bg-indigo-700 border-indigo-800">
+                        <Slice className="w-6 h-6" /> Cut Fruit
+                    </Button>
+                    )}
+
+                    {step === 2 && (
+                    <Button onClick={() => setStep(3)} className="w-full bg-green-600 hover:bg-green-700 border-green-800">
+                        <Check className="w-6 h-6" /> Reveal Answer
+                    </Button>
+                    )}
+
+                    {showAnswer && (
+                    <div className={`p-6 text-center font-bold rounded-2xl border-4 ${isEnough ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'} animate-fade-in shadow-lg`}>
+                        <div className="text-3xl mb-2">Total: {totalSlices} Slices</div>
+                        <div className="text-xl font-normal">
+                            {isEnough 
+                            ? `Great! ${totalSlices} ≥ ${totalStudents}` 
+                            : `Oh no! ${totalSlices} < ${totalStudents}`}
+                        </div>
+                    </div>
+                    )}
+                </div>
+                </Card>
+            );
+        };
+
+        const FruitBowl = () => {
+            return (
+                <div className="space-y-8">
+                <div className="bg-blue-50 border-l-8 border-blue-500 p-8 rounded-2xl">
+                    <h2 className="text-3xl font-bold text-blue-900 mb-2">🍎 Fruit Bowl Challenge</h2>
+                    <p className="text-2xl text-blue-800 leading-relaxed">
+                    Mrs. Smith has <strong>24 Students</strong>. She bought <strong>5 of each fruit</strong>.
+                    </p>
+                </div>
+
+                <div className="grid xl:grid-cols-3 gap-8">
+                    <FruitSection 
+                    fruitName="Oranges" 
+                    totalStudents={24} 
+                    cutInto={4} 
+                    baseCount={5}
+                    icon="🍊"
+                    colorClass="text-orange-500"
+                    />
+                    <FruitSection 
+                    fruitName="Apples" 
+                    totalStudents={24} 
+                    cutInto={8} 
+                    baseCount={5}
+                    icon="🍎"
+                    colorClass="text-red-500"
+                    />
+                    <FruitSection 
+                    fruitName="Bananas" 
+                    totalStudents={24} 
+                    cutInto={2} 
+                    baseCount={5}
+                    icon="🍌"
+                    colorClass="text-yellow-600"
+                    />
+                </div>
+                </div>
+            );
+        };
+
+        const LessonPlan = () => {
+            const [currentSection, setCurrentSection] = useState('intro');
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                const handleFullscreenChange = () => {
+                setIsFullscreen(!!document.fullscreenElement);
+                };
+                document.addEventListener('fullscreenchange', handleFullscreenChange);
+                return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            }, []);
+
+            const toggleFullScreen = () => {
+                if (!document.fullscreenElement) {
+                if(containerRef.current) {
+                    containerRef.current.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                    });
+                }
+                } else {
+                document.exitFullscreen();
+                }
+            };
+
+            const renderSection = () => {
+                switch(currentSection) {
+                case 'intro':
+                    return (
+                    <div className="text-center space-y-12 py-16">
+                        <h1 className="text-5xl md:text-7xl font-extrabold text-blue-700 mb-6 drop-shadow-sm">
+                        Fractions in the Real World
+                        </h1>
+                        <p className="text-3xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+                        Today we are going to explore how we use multiplication and fractions to plan a lunch and a party!
+                        </p>
+                        <div className="flex justify-center pt-8">
+                        <Button onClick={() => setCurrentSection('sandwich')} className="text-3xl px-16 py-8 rounded-3xl animate-pulse hover:animate-none">
+                            Start Lesson <ChevronRight className="w-8 h-8 ml-2" />
+                        </Button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-20 opacity-30 select-none">
+                        <div className="text-8xl animate-bounce" style={{animationDelay: '0s'}}>🥪</div>
+                        <div className="text-8xl animate-bounce" style={{animationDelay: '0.2s'}}>🍊</div>
+                        <div className="text-8xl animate-bounce" style={{animationDelay: '0.4s'}}>🍌</div>
+                        </div>
+                    </div>
+                    );
+                case 'sandwich':
+                    return <SandwichReview onComplete={() => setCurrentSection('slicedup')} />;
+                case 'slicedup':
+                    return <SlicedUp onComplete={() => setCurrentSection('fruitbowl')} />;
+                case 'fruitbowl':
+                    return <FruitBowl />;
+                default:
+                    return <div>Unknown Section</div>;
+                }
+            };
+
+            return (
+                <div 
+                ref={containerRef}
+                className={`min-h-screen bg-gray-50 font-sans text-gray-800 transition-all duration-300 ${isFullscreen ? 'p-8 overflow-y-auto' : 'p-4 md:p-8'}`}
+                >
+                <div className={`mx-auto transition-all duration-300 ${isFullscreen ? 'max-w-7xl' : 'max-w-6xl'}`}>
+                    
+                    {/* Header Navigation */}
+                    <div className="flex justify-between items-center mb-10 bg-white p-6 rounded-3xl shadow-md border border-gray-100">
+                    <div className="font-bold text-gray-500 text-xl tracking-wide uppercase">Grade 5 Unit 5 • Part 2</div>
+                    
+                    <div className="flex items-center gap-6">
+                        <div className="flex gap-3 bg-gray-100 p-2 rounded-full">
+                        <button 
+                            onClick={() => setCurrentSection('sandwich')}
+                            className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'sandwich' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
+                            title="Sandwich Problem"
+                        />
+                        <button 
+                            onClick={() => setCurrentSection('slicedup')}
+                            className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'slicedup' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
+                            title="Sliced Up Video"
+                        />
+                        <button 
+                            onClick={() => setCurrentSection('fruitbowl')}
+                            className={`w-6 h-6 rounded-full transition-all duration-300 ${currentSection === 'fruitbowl' ? 'bg-blue-600 scale-125' : 'bg-gray-300 hover:bg-gray-400'}`}
+                            title="Fruit Bowl Challenge"
+                        />
+                        </div>
+
+                        <button
+                        onClick={toggleFullScreen}
+                        className="p-3 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors border-2 border-transparent hover:border-gray-200"
+                        title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+                        >
+                        {isFullscreen ? <Minimize className="w-8 h-8" /> : <Maximize className="w-8 h-8" />}
+                        </button>
+                    </div>
+                    </div>
+
+                    {renderSection()}
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<LessonPlan />);
+    </script>
+</body>
+</html>
