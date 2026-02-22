@@ -1,697 +1,335 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Users, Square, RefreshCcw, ChefHat, Plus, Minus, Pointer, Pizza } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraction Division Visualizer</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
 
-export default function App() {
-  const [step, setStep] = useState(0);
-  
-  // Sandbox States (Only used in the final Sandbox step)
-  const [sandboxDenom, setSandboxDenom] = useState(4);
-  const [sandboxDivisor, setSandboxDivisor] = useState(3);
-  const [sandboxTheme, setSandboxTheme] = useState('brownie');
-  
-  // Interactive States
-  const [hasCut, setHasCut] = useState(false);
-  const [countedPieces, setCountedPieces] = useState([]);
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  // Reset interactive states when changing steps
-  const changeStep = (newStep) => {
-    setStep(newStep);
-    setHasCut(false);
-    setCountedPieces([]);
-  };
+        // --- Custom SVG Icons to replace the lucide-react imports ---
+        const Icon = ({ children, size = 24, className = "", fill = "none" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const ChevronRight = (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"></polyline></Icon>;
+        const ChevronLeft = (p) => <Icon {...p}><polyline points="15 18 9 12 15 6"></polyline></Icon>;
+        const Users = (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>;
+        const Square = (p) => <Icon {...p} fill={p.fill || "none"}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></Icon>;
+        const RefreshCcw = (p) => <Icon {...p}><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></Icon>;
+        const ChefHat = (p) => <Icon {...p}><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path><line x1="6" y1="17" x2="18" y2="17"></line></Icon>;
+        const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></Icon>;
+        const Minus = (p) => <Icon {...p}><line x1="5" y1="12" x2="19" y2="12"></line></Icon>;
+        const Pointer = (p) => <Icon {...p}><path d="M22 14a8 8 0 0 1-8 8"></path><path d="M18 11v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path><path d="M14 10V9a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1"></path><path d="M10 9.5V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v10"></path><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></Icon>;
+        const Pizza = (p) => <Icon {...p}><path d="M15 11h.01"></path><path d="M11 15h.01"></path><path d="M16 16h.01"></path><path d="M2 16l20 6-6-20A20 20 0 0 0 2 16"></path><path d="M5.71 17.11a17.04 17.04 0 0 1 11.4-11.4"></path></Icon>;
+        const Maximize = (p) => <Icon {...p}><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></Icon>;
+        const Minimize = (p) => <Icon {...p}><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></Icon>;
 
-  const nextStep = () => changeStep(Math.min(12, step + 1));
-  const prevStep = () => changeStep(Math.max(0, step - 1));
+        // --- Main App Component ---
+        function App() {
+          const [step, setStep] = useState(0);
+          const [sandboxDenom, setSandboxDenom] = useState(4);
+          const [sandboxDivisor, setSandboxDivisor] = useState(3);
+          const [sandboxTheme, setSandboxTheme] = useState('brownie');
+          const [hasCut, setHasCut] = useState(false);
+          const [countedPieces, setCountedPieces] = useState([]);
+          const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Big, touch-friendly Stepper Component for Smartboards
-  const TouchStepper = ({ value, min, max, onChange, label, colorClass, highlightClass }) => (
-    <div className="flex flex-col items-center select-none touch-manipulation">
-      <label className="font-bold text-stone-500 uppercase tracking-wider mb-3 text-sm">{label}</label>
-      <div className="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm border-2 border-stone-200">
-        <button 
-          onClick={() => onChange(Math.max(min, value - 1))} 
-          disabled={value <= min}
-          className={`h-16 w-16 rounded-xl flex items-center justify-center text-3xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${highlightClass} bg-stone-100 hover:bg-stone-200 active:scale-95`}
-        >
-          <Minus size={32} />
-        </button>
-        <div className={`text-4xl font-extrabold w-16 text-center ${colorClass}`}>
-          {value}
-        </div>
-        <button 
-          onClick={() => onChange(Math.min(max, value + 1))} 
-          disabled={value >= max}
-          className={`h-16 w-16 rounded-xl flex items-center justify-center text-3xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${highlightClass} bg-stone-100 hover:bg-stone-200 active:scale-95`}
-        >
-          <Plus size={32} />
-        </button>
-      </div>
-    </div>
-  );
-
-  // Visualizer Grid Component
-  const FractionGrid = ({ 
-    currentDenom, 
-    currentDivisor, 
-    showOriginalFraction, 
-    showCuts, 
-    showGhostGrid, 
-    showTargetPiece,
-    interactiveMode,
-    theme = 'brownie' // 'brownie' or 'pizza'
-  }) => {
-    const displayDivisor = showCuts ? currentDivisor : 1;
-    
-    let cells = [];
-    for (let r = 0; r < displayDivisor; r++) {
-      for (let c = 0; c < currentDenom; c++) {
-        if (!showGhostGrid && c !== 0 && showCuts && r > 0) continue; 
-        cells.push({ row: r, col: c });
-      }
-    }
-    
-    // Theme configurations
-    const themes = {
-      brownie: {
-        container: "bg-slate-300 border-slate-400",
-        fraction: "bg-[#5D4037] border-[#3E2723]",
-        target: "bg-[#8D6E63] border-[#4E342E]",
-        empty: "bg-slate-200/60 border-slate-400/50",
-        ghost: "bg-slate-100 border-slate-300"
-      },
-      pizza: {
-        container: "bg-[#E8DCC4] border-[#C2A878]", // Cardboard box
-        fraction: "bg-[#FBBF24] border-[#F59E0B]", // Cheese pizza
-        target: "bg-[#FCD34D] border-[#D97706]", // Selected slice
-        empty: "bg-[#D1BFA0]/40 border-[#C2A878]/60", // Empty box
-        ghost: "bg-[#E8DCC4] border-[#C2A878]"
-      }
-    };
-    const t = themes[theme];
-
-    return (
-      <div className={`relative p-3 rounded-[2rem] border-[12px] shadow-xl max-w-lg mx-auto w-full ${t.container}`}>
-        {interactiveMode === 'cut' && !hasCut && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-full font-bold shadow-lg animate-bounce flex items-center gap-3 z-20 pointer-events-none whitespace-nowrap">
-            <Pointer size={24} /> Tap the {theme} to cut!
-          </div>
-        )}
-
-        <div 
-          onClick={() => {
-            if (interactiveMode === 'cut' && !hasCut) setHasCut(true);
-          }}
-          className={`w-full aspect-video grid gap-2 select-none touch-manipulation transition-all duration-300
-            ${interactiveMode === 'cut' && !hasCut ? 'cursor-pointer hover:scale-[1.02]' : ''}
-          `}
-          style={{ 
-            gridTemplateColumns: `repeat(${currentDenom}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${displayDivisor}, minmax(0, 1fr))`
-          }}
-        >
-          {cells.map((cell) => {
-            const { row, col } = cell;
-            const i = row * currentDenom + col; 
-            
-            let cellStyle = {};
-            let bgColor = ""; 
-            let content = null;
-            let isCounted = countedPieces.includes(i);
-            
-            if (!showGhostGrid && col !== 0 && showCuts) {
-              cellStyle.gridRow = '1 / -1';
-            }
-
-            // STYLING LOGIC
-            if (col === 0) {
-              bgColor = `${t.fraction} border-4 shadow-inner`; 
-              
-              if (showTargetPiece && row === 0) {
-                bgColor = `${t.target} border-4 shadow-2xl transform scale-[1.05] z-10`;
-                if (interactiveMode !== 'count') {
-                  content = <span className={`${theme === 'brownie' ? 'text-white' : 'text-amber-900'} font-black text-3xl md:text-5xl drop-shadow-md`}>1</span>;
-                }
-              }
+          // Fullscreen Toggle Logic
+          const toggleFullscreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
             } else {
-              if (!showGhostGrid) {
-                bgColor = `${t.empty} border-4 border-dashed flex items-center justify-center`;
-                content = <span className={`${theme === 'brownie' ? 'text-slate-400' : 'text-[#A38A60]'} font-bold tracking-widest uppercase text-xs md:text-sm -rotate-90 md:rotate-0`}>Eaten</span>;
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+          };
+
+          useEffect(() => {
+              const handleFullscreenChange = () => {
+                  setIsFullscreen(!!document.fullscreenElement);
+              };
+              document.addEventListener('fullscreenchange', handleFullscreenChange);
+              return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+          }, []);
+
+          const changeStep = (newStep) => {
+            setStep(newStep);
+            setHasCut(false);
+            setCountedPieces([]);
+          };
+
+          const nextStep = () => changeStep(Math.min(12, step + 1));
+          const prevStep = () => changeStep(Math.max(0, step - 1));
+
+          const TouchStepper = ({ value, min, max, onChange, label, colorClass, highlightClass }) => (
+            <div className="flex flex-col items-center select-none touch-manipulation">
+              <label className="font-bold text-stone-500 uppercase tracking-wider mb-3 text-sm">{label}</label>
+              <div className="flex items-center gap-3 bg-white p-3 rounded-2xl shadow-sm border-2 border-stone-200">
+                <button 
+                  onClick={() => onChange(Math.max(min, value - 1))} 
+                  disabled={value <= min}
+                  className={`h-16 w-16 rounded-xl flex items-center justify-center text-3xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${highlightClass} bg-stone-100 hover:bg-stone-200 active:scale-95`}
+                >
+                  <Minus size={32} />
+                </button>
+                <div className={`text-4xl font-extrabold w-16 text-center ${colorClass}`}>
+                  {value}
+                </div>
+                <button 
+                  onClick={() => onChange(Math.min(max, value + 1))} 
+                  disabled={value >= max}
+                  className={`h-16 w-16 rounded-xl flex items-center justify-center text-3xl font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${highlightClass} bg-stone-100 hover:bg-stone-200 active:scale-95`}
+                >
+                  <Plus size={32} />
+                </button>
+              </div>
+            </div>
+          );
+
+          const FractionGrid = ({ currentDenom, currentDivisor, showOriginalFraction, showCuts, showGhostGrid, showTargetPiece, interactiveMode, theme = 'brownie' }) => {
+            const displayDivisor = showCuts ? currentDivisor : 1;
+            let cells = [];
+            for (let r = 0; r < displayDivisor; r++) {
+              for (let c = 0; c < currentDenom; c++) {
+                if (!showGhostGrid && c !== 0 && showCuts && r > 0) continue; 
+                cells.push({ row: r, col: c });
+              }
+            }
+            
+            const themes = {
+              brownie: {
+                container: "bg-slate-300 border-slate-400",
+                fraction: "bg-[#5D4037] border-[#3E2723]",
+                target: "bg-[#8D6E63] border-[#4E342E]",
+                empty: "bg-slate-200/60 border-slate-400/50",
+                ghost: "bg-slate-100 border-slate-300"
+              },
+              pizza: {
+                container: "bg-[#E8DCC4] border-[#C2A878]",
+                fraction: "bg-[#FBBF24] border-[#F59E0B]",
+                target: "bg-[#FCD34D] border-[#D97706]",
+                empty: "bg-[#D1BFA0]/40 border-[#C2A878]/60",
+                ghost: "bg-[#E8DCC4] border-[#C2A878]"
+              }
+            };
+            const t = themes[theme];
+
+            return (
+              <div className={`relative p-3 rounded-[2rem] border-[12px] shadow-xl max-w-lg mx-auto w-full ${t.container}`}>
+                {interactiveMode === 'cut' && !hasCut && (
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-full font-bold shadow-lg animate-bounce flex items-center gap-3 z-20 pointer-events-none whitespace-nowrap">
+                    <Pointer size={24} /> Tap the {theme} to cut!
+                  </div>
+                )}
+
+                <div 
+                  onClick={() => { if (interactiveMode === 'cut' && !hasCut) setHasCut(true); }}
+                  className={`w-full aspect-video grid gap-2 select-none touch-manipulation transition-all duration-300 ${interactiveMode === 'cut' && !hasCut ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  style={{ gridTemplateColumns: `repeat(${currentDenom}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${displayDivisor}, minmax(0, 1fr))` }}
+                >
+                  {cells.map((cell) => {
+                    const { row, col } = cell;
+                    const i = row * currentDenom + col; 
+                    let cellStyle = {};
+                    let bgColor = ""; 
+                    let content = null;
+                    let isCounted = countedPieces.includes(i);
+                    
+                    if (!showGhostGrid && col !== 0 && showCuts) cellStyle.gridRow = '1 / -1';
+
+                    if (col === 0) {
+                      bgColor = `${t.fraction} border-4 shadow-inner`; 
+                      if (showTargetPiece && row === 0) {
+                        bgColor = `${t.target} border-4 shadow-2xl transform scale-[1.05] z-10`;
+                        if (interactiveMode !== 'count') content = <span className={`${theme === 'brownie' ? 'text-white' : 'text-amber-900'} font-black text-3xl md:text-5xl drop-shadow-md`}>1</span>;
+                      }
+                    } else {
+                      if (!showGhostGrid) {
+                        bgColor = `${t.empty} border-4 border-dashed flex items-center justify-center`;
+                        content = <span className={`${theme === 'brownie' ? 'text-slate-400' : 'text-[#A38A60]'} font-bold tracking-widest uppercase text-xs md:text-sm -rotate-90 md:rotate-0`}>Eaten</span>;
+                      } else {
+                        bgColor = `${t.ghost} border-4 border-dashed opacity-80`;
+                      }
+                    }
+
+                    if (interactiveMode === 'count' && (showGhostGrid || col === 0)) {
+                      if (isCounted) {
+                        bgColor = "bg-green-400 border-4 border-green-600 shadow-inner transform scale-95 transition-all";
+                        content = <span className="text-green-900 font-black text-2xl md:text-4xl">{countedPieces.indexOf(i) + 1}</span>;
+                      } else if (showGhostGrid || col === 0) {
+                         bgColor += " cursor-pointer hover:scale-105 hover:shadow-md transition-all";
+                      }
+                    }
+
+                    return (
+                      <div 
+                        key={i} style={cellStyle}
+                        onClick={(e) => {
+                          if (interactiveMode === 'count' && !isCounted && (showGhostGrid || col === 0)) {
+                            e.stopPropagation();
+                            setCountedPieces([...countedPieces, i]);
+                          }
+                        }}
+                        className={`rounded-xl flex items-center justify-center transition-all duration-300 ${bgColor}`}
+                      >
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          };
+
+          const FractionCircle = ({ currentDenom, currentDivisor, showOriginalFraction, showCuts, showGhostGrid, showTargetPiece, interactiveMode }) => {
+            const totalSlices = currentDenom * currentDivisor;
+            const anglePerSlice = 360 / totalSlices;
+            const radius = 95;
+            const cx = 100;
+            const cy = 100;
+            let wedges = [];
+
+            for (let c = 0; c < currentDenom; c++) {
+              const isOriginalFraction = (c === 0);
+              const isEaten = !isOriginalFraction;
+
+              if (showCuts && (isOriginalFraction || showGhostGrid)) {
+                for (let r = 0; r < currentDivisor; r++) {
+                  const sliceIndex = c * currentDivisor + r;
+                  const startAngle = sliceIndex * anglePerSlice;
+                  const endAngle = (sliceIndex + 1) * anglePerSlice;
+                  const isTarget = isOriginalFraction && r === 0;
+                  wedges.push({ id: sliceIndex, startAngle, endAngle, isEaten, isTarget, isGrouped: false, isOriginalFraction });
+                }
               } else {
-                bgColor = `${t.ghost} border-4 border-dashed opacity-80`;
+                const startAngle = (c * currentDivisor) * anglePerSlice;
+                const endAngle = ((c + 1) * currentDivisor) * anglePerSlice;
+                wedges.push({ id: c * currentDivisor, startAngle, endAngle, isEaten, isTarget: false, isGrouped: true, isOriginalFraction });
               }
             }
 
-            // COUNTING OVERRIDES
-            if (interactiveMode === 'count' && (showGhostGrid || col === 0)) {
-              if (isCounted) {
-                bgColor = "bg-green-400 border-4 border-green-600 shadow-inner transform scale-95 transition-all";
-                content = <span className="text-green-900 font-black text-2xl md:text-4xl">{countedPieces.indexOf(i) + 1}</span>;
-              } else if (showGhostGrid || col === 0) {
-                 bgColor += " cursor-pointer hover:scale-105 hover:shadow-md transition-all";
-              }
+            function polarToCartesian(centerX, centerY, r, angleInDegrees) {
+              const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+              return { x: centerX + (r * Math.cos(angleInRadians)), y: centerY + (r * Math.sin(angleInRadians)) };
+            }
+
+            function describeArc(x, y, r, startAngle, endAngle){
+                if (endAngle - startAngle >= 360) {
+                    return `M ${x} ${y - r} A ${r} ${r} 0 1 1 ${x} ${y + r} A ${r} ${r} 0 1 1 ${x} ${y - r} Z`;
+                }
+                const start = polarToCartesian(x, y, r, startAngle);
+                const end = polarToCartesian(x, y, r, endAngle);
+                const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+                return ["M", x, y, "L", start.x, start.y, "A", r, r, 0, largeArcFlag, 1, end.x, end.y, "Z"].join(" ");
             }
 
             return (
-              <div 
-                key={i} style={cellStyle}
-                onClick={(e) => {
-                  if (interactiveMode === 'count' && !isCounted && (showGhostGrid || col === 0)) {
-                    e.stopPropagation();
-                    setCountedPieces([...countedPieces, i]);
-                  }
-                }}
-                className={`rounded-xl flex items-center justify-center transition-all duration-300 ${bgColor}`}
-              >
-                {content}
+              <div className="relative p-4 rounded-[2rem] border-[8px] shadow-xl max-w-sm mx-auto w-full bg-[#E8DCC4] border-[#C2A878] aspect-square flex items-center justify-center">
+                  {interactiveMode === 'cut' && !hasCut && (
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-full font-bold shadow-lg animate-bounce flex items-center gap-3 z-20 pointer-events-none whitespace-nowrap">
+                      <Pointer size={24} /> Tap the pizza to slice it!
+                    </div>
+                  )}
+
+                  <svg viewBox="0 0 200 200" className={`w-full h-full select-none touch-manipulation drop-shadow-xl transition-transform duration-300 ${interactiveMode === 'cut' && !hasCut ? 'cursor-pointer hover:scale-[1.05]' : ''}`} onClick={() => { if (interactiveMode === 'cut' && !hasCut) setHasCut(true); }}>
+                    {wedges.map((wedge, idx) => {
+                      const isCounted = countedPieces.includes(wedge.id);
+                      const pathData = describeArc(cx, cy, radius, wedge.startAngle, wedge.endAngle);
+                      let fill = "", stroke = "", strokeWidth = "2", strokeDasharray = "none", transform = "";
+
+                      if (wedge.isOriginalFraction) {
+                        fill = "#FBBF24"; stroke = "#F59E0B";
+                        if (showTargetPiece && wedge.isTarget) {
+                          fill = "#FCD34D"; stroke = "#D97706"; strokeWidth = "4";
+                          const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
+                          const shift = polarToCartesian(0, 0, 8, midAngle);
+                          if (interactiveMode !== 'count') transform = `translate(${shift.x}, ${shift.y})`;
+                        }
+                      } else {
+                        if (wedge.isGrouped) { fill = "rgba(209, 191, 160, 0.4)"; stroke = "rgba(194, 168, 120, 0.6)"; strokeDasharray = "6,4"; } 
+                        else { fill = "rgba(232, 220, 196, 0.8)"; stroke = "#C2A878"; strokeDasharray = "6,4"; }
+                      }
+
+                      if (interactiveMode === 'count' && (showGhostGrid || wedge.isOriginalFraction)) {
+                        if (isCounted) {
+                          fill = "#4ADE80"; stroke = "#16A34A"; strokeWidth = "4";
+                          const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
+                          const shift = polarToCartesian(0, 0, -3, midAngle);
+                          transform = `translate(${shift.x}, ${shift.y}) scale(0.96)`;
+                        }
+                      }
+
+                      const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
+                      const textPos = polarToCartesian(cx, cy, radius * 0.65, midAngle);
+
+                      return (
+                        <g key={idx} style={{ transformOrigin: '100px 100px', transform }} className={`transition-all duration-300 ${interactiveMode === 'count' && !isCounted && (showGhostGrid || wedge.isOriginalFraction) ? 'cursor-pointer hover:opacity-80' : ''}`} onClick={(e) => { if (interactiveMode === 'count' && !isCounted && (showGhostGrid || wedge.isOriginalFraction)) { e.stopPropagation(); setCountedPieces([...countedPieces, wedge.id]); } }}>
+                          <path d={pathData} fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeDasharray={strokeDasharray} className="transition-all duration-300" />
+                          {wedge.isEaten && !showGhostGrid && ( <text x={textPos.x} y={textPos.y} fill="#A38A60" fontSize="14" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">EATEN</text> )}
+                          {showTargetPiece && wedge.isTarget && interactiveMode !== 'count' && ( <text x={textPos.x} y={textPos.y} fill="#92400E" fontSize="28" fontWeight="900" textAnchor="middle" dominantBaseline="middle">1</text> )}
+                          {interactiveMode === 'count' && isCounted && ( <text x={textPos.x} y={textPos.y} fill="#064E3B" fontSize="28" fontWeight="900" textAnchor="middle" dominantBaseline="middle">{countedPieces.indexOf(wedge.id) + 1}</text> )}
+                        </g>
+                      );
+                    })}
+                  </svg>
               </div>
             );
-          })}
-        </div>
-      </div>
-    );
-  };
+          };
 
-  // Visualizer Circle Component (For Pizza)
-  const FractionCircle = ({ 
-    currentDenom, 
-    currentDivisor, 
-    showOriginalFraction, 
-    showCuts, 
-    showGhostGrid, 
-    showTargetPiece,
-    interactiveMode 
-  }) => {
-    const totalSlices = currentDenom * currentDivisor;
-    const anglePerSlice = 360 / totalSlices;
-    const radius = 95;
-    const cx = 100;
-    const cy = 100;
+          const stepsData = [
+            { title: "Problem 1: The Brownie Pan", content: "Imagine you baked a huge pan of brownies. But, your family already ate most of it! Let's look at what is left.", visual: <ChefHat size={140} className="mx-auto text-[#5D4037] mb-6 animate-bounce drop-shadow-lg" />, action: "Start Problem 1", isNextDisabled: false },
+            { title: "Step 1: The Leftovers", content: ( <div className="text-2xl leading-relaxed">You only have <strong className="text-[#5D4037] bg-stone-200 px-2 rounded">1/4</strong> of the pan of brownies left. <br/><br/><span className="text-lg text-stone-500">The dark chocolate section is your brownie. The light, dotted spaces show the 3/4 of the pan that is already eaten!</span></div> ), visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />, action: "Next Step", isNextDisabled: false },
+            { title: "Step 2: Time to Share", content: ( <div className="text-2xl leading-relaxed">You want to share this 1/4 piece equally among yourself and 2 friends (<strong className="text-blue-600 bg-blue-100 px-2 rounded">3 people total</strong>).<div className="flex justify-center items-center gap-4 mt-6 text-4xl font-black text-blue-800 bg-blue-50 p-6 rounded-2xl border-4 border-blue-200 shadow-sm"><span>1/4</span> <span className="text-blue-300">&divide;</span> <span>3</span></div></div> ), visual: ( <div className="flex justify-center items-center gap-8 w-full"><FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" /><div className="flex flex-col gap-4">{[1, 2, 3].map(i => <div key={i} className="bg-blue-100 p-3 rounded-full shadow-sm border-2 border-blue-200"><Users size={40} className="text-blue-600" /></div>)}</div></div> ), action: "Get ready to cut!", isNextDisabled: false },
+            { title: "Step 3: Make the Cuts!", content: ( <div className="text-2xl leading-relaxed">We need to cut the leftover brownie piece into <strong>3 equal slices</strong>.<br/><br/><span className="text-blue-600 font-bold bg-blue-50 p-2 rounded-lg block border border-blue-200">👉 Tap the brownie on the board to make the cuts!</span></div> ), visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={hasCut} showGhostGrid={false} showTargetPiece={hasCut} interactiveMode="cut" />, action: "See the Whole Pan", isNextDisabled: !hasCut },
+            { title: "Step 4: Count the Pieces!", content: ( <div className="text-2xl leading-relaxed">The lighter piece is your single slice. But what fraction of the <em>whole</em> pan is it?<br/><br/><span className="text-green-700 font-bold bg-green-50 p-2 rounded-lg block border border-green-200">👉 Tap EVERY piece inside the whole pan to count how many slices it takes to make a whole!</span></div> ), visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="count" />, action: "Reveal Final Answer", isNextDisabled: countedPieces.length < 12 },
+            { title: "Step 5: The Final Answer", content: ( <div className="text-2xl leading-relaxed">Great job counting! Because we split the 4 columns into 3 rows, there are <strong className="text-green-600">12 pieces total</strong> in the pan.<br/>Your piece is 1 out of 12.<br/><div className="mt-6 p-6 bg-green-100 rounded-2xl border-4 border-green-300 text-center font-black text-5xl text-green-800 shadow-md">1/4 &divide; 3 = 1/12</div></div> ), visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="none" />, action: "Try Problem 2!" },
+            { title: "Problem 2: The Pizza Box", content: "Let's try another one! Jacob ordered a large, rectangular school pizza. Let's look inside the cardboard box...", visual: <Pizza size={140} className="mx-auto text-[#F59E0B] mb-6 animate-pulse drop-shadow-lg" />, action: "Start Problem 2", isNextDisabled: false },
+            { title: "Step 1: The Leftovers", content: ( <div className="text-2xl leading-relaxed">There is <strong className="text-[#D97706] bg-yellow-100 px-2 rounded">1/2</strong> of the pizza left in the box. <br/><br/><span className="text-lg text-stone-500">The yellow section is the leftover cheese pizza. The empty side shows the 1/2 of the pizza that was already eaten!</span></div> ), visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />, action: "Next Step", isNextDisabled: false },
+            { title: "Step 2: Time to Share", content: ( <div className="text-2xl leading-relaxed">Jacob wants to share the leftovers with his brother (<strong className="text-blue-600 bg-blue-100 px-2 rounded">2 people total</strong>).<div className="flex justify-center items-center gap-4 mt-6 text-4xl font-black text-blue-800 bg-blue-50 p-6 rounded-2xl border-4 border-blue-200 shadow-sm"><span>1/2</span> <span className="text-blue-300">&divide;</span> <span>2</span></div></div> ), visual: ( <div className="flex justify-center items-center gap-8 w-full"><FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" /><div className="flex flex-col gap-4">{[1, 2].map(i => <div key={i} className="bg-blue-100 p-3 rounded-full shadow-sm border-2 border-blue-200"><Users size={40} className="text-blue-600" /></div>)}</div></div> ), action: "Get ready to cut!", isNextDisabled: false },
+            { title: "Step 3: Make the Cuts!", content: ( <div className="text-2xl leading-relaxed">We need to cut the leftover pizza piece into <strong>2 equal slices</strong>.<br/><br/><span className="text-blue-600 font-bold bg-blue-50 p-2 rounded-lg block border border-blue-200">👉 Tap the pizza on the board to slice it!</span></div> ), visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={hasCut} showGhostGrid={false} showTargetPiece={hasCut} interactiveMode="cut" />, action: "See the Whole Box", isNextDisabled: !hasCut },
+            { title: "Step 4: Count the Pieces!", content: ( <div className="text-2xl leading-relaxed">The bright yellow piece is Jacob's slice. But what fraction of the <em>whole</em> pizza is it?<br/><br/><span className="text-green-700 font-bold bg-green-50 p-2 rounded-lg block border border-green-200">👉 Tap EVERY piece inside the whole box to count how many slices it takes to make a whole!</span></div> ), visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="count" />, action: "Reveal Final Answer", isNextDisabled: countedPieces.length < 4 },
+            { title: "Step 5: The Final Answer", content: ( <div className="text-2xl leading-relaxed">Awesome! Because we split the 2 halves into 2 slices each, there are <strong className="text-green-600">4 pieces total</strong> in the box.<br/>Jacob's piece is 1 out of 4.<br/><div className="mt-6 p-6 bg-green-100 rounded-2xl border-4 border-green-300 text-center font-black text-5xl text-green-800 shadow-md">1/2 &divide; 2 = 1/4</div></div> ), visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="none" />, action: "Try the Sandbox" }
+          ];
 
-    let wedges = [];
-    for (let c = 0; c < currentDenom; c++) {
-      const isOriginalFraction = (c === 0);
-      const isEaten = !isOriginalFraction;
-
-      if (showCuts && (isOriginalFraction || showGhostGrid)) {
-        for (let r = 0; r < currentDivisor; r++) {
-          const sliceIndex = c * currentDivisor + r;
-          const startAngle = sliceIndex * anglePerSlice;
-          const endAngle = (sliceIndex + 1) * anglePerSlice;
-          const isTarget = isOriginalFraction && r === 0;
-          wedges.push({ id: sliceIndex, startAngle, endAngle, isEaten, isTarget, isGrouped: false, isOriginalFraction });
-        }
-      } else {
-        const startAngle = (c * currentDivisor) * anglePerSlice;
-        const endAngle = ((c + 1) * currentDivisor) * anglePerSlice;
-        wedges.push({ id: c * currentDivisor, startAngle, endAngle, isEaten, isTarget: false, isGrouped: true, isOriginalFraction });
-      }
-    }
-
-    function polarToCartesian(centerX, centerY, r, angleInDegrees) {
-      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
-      return {
-        x: centerX + (r * Math.cos(angleInRadians)),
-        y: centerY + (r * Math.sin(angleInRadians))
-      };
-    }
-
-    function describeArc(x, y, r, startAngle, endAngle){
-        if (endAngle - startAngle >= 360) {
-            return `M ${x} ${y - r} A ${r} ${r} 0 1 1 ${x} ${y + r} A ${r} ${r} 0 1 1 ${x} ${y - r} Z`;
-        }
-        const start = polarToCartesian(x, y, r, startAngle);
-        const end = polarToCartesian(x, y, r, endAngle);
-        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-        return [
-            "M", x, y,
-            "L", start.x, start.y,
-            "A", r, r, 0, largeArcFlag, 1, end.x, end.y,
-            "Z"
-        ].join(" ");
-    }
-
-    return (
-      <div className="relative p-4 rounded-[2rem] border-[8px] shadow-xl max-w-sm mx-auto w-full bg-[#E8DCC4] border-[#C2A878] aspect-square flex items-center justify-center">
-          {interactiveMode === 'cut' && !hasCut && (
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-full font-bold shadow-lg animate-bounce flex items-center gap-3 z-20 pointer-events-none whitespace-nowrap">
-              <Pointer size={24} /> Tap the pizza to slice it!
-            </div>
-          )}
-
-          <svg
-            viewBox="0 0 200 200"
-            className={`w-full h-full select-none touch-manipulation drop-shadow-xl transition-transform duration-300
-              ${interactiveMode === 'cut' && !hasCut ? 'cursor-pointer hover:scale-[1.05]' : ''}
-            `}
-            onClick={() => {
-              if (interactiveMode === 'cut' && !hasCut) setHasCut(true);
-            }}
-          >
-            {wedges.map((wedge, idx) => {
-              const isCounted = countedPieces.includes(wedge.id);
-              const pathData = describeArc(cx, cy, radius, wedge.startAngle, wedge.endAngle);
-
-              let fill = "";
-              let stroke = "";
-              let strokeWidth = "2";
-              let strokeDasharray = "none";
-              let transform = "";
-
-              if (wedge.isOriginalFraction) {
-                fill = "#FBBF24"; 
-                stroke = "#F59E0B";
-                if (showTargetPiece && wedge.isTarget) {
-                  fill = "#FCD34D";
-                  stroke = "#D97706";
-                  strokeWidth = "4";
-                  const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
-                  const shift = polarToCartesian(0, 0, 8, midAngle);
-                  if (interactiveMode !== 'count') transform = `translate(${shift.x}, ${shift.y})`;
-                }
-              } else {
-                if (wedge.isGrouped) {
-                  fill = "rgba(209, 191, 160, 0.4)"; 
-                  stroke = "rgba(194, 168, 120, 0.6)";
-                  strokeDasharray = "6,4";
-                } else {
-                  fill = "rgba(232, 220, 196, 0.8)"; 
-                  stroke = "#C2A878";
-                  strokeDasharray = "6,4";
-                }
-              }
-
-              if (interactiveMode === 'count' && (showGhostGrid || wedge.isOriginalFraction)) {
-                if (isCounted) {
-                  fill = "#4ADE80";
-                  stroke = "#16A34A";
-                  strokeWidth = "4";
-                  const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
-                  const shift = polarToCartesian(0, 0, -3, midAngle);
-                  transform = `translate(${shift.x}, ${shift.y}) scale(0.96)`;
-                }
-              }
-
-              const midAngle = (wedge.startAngle + wedge.endAngle) / 2;
-              const textPos = polarToCartesian(cx, cy, radius * 0.65, midAngle);
-
-              return (
-                <g
-                  key={idx}
-                  style={{ transformOrigin: '100px 100px', transform }}
-                  className={`transition-all duration-300 ${interactiveMode === 'count' && !isCounted && (showGhostGrid || wedge.isOriginalFraction) ? 'cursor-pointer hover:opacity-80' : ''}`}
-                  onClick={(e) => {
-                    if (interactiveMode === 'count' && !isCounted && (showGhostGrid || wedge.isOriginalFraction)) {
-                      e.stopPropagation();
-                      setCountedPieces([...countedPieces, wedge.id]);
-                    }
-                  }}
-                >
-                  <path
-                    d={pathData}
-                    fill={fill}
-                    stroke={stroke}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={strokeDasharray}
-                    className="transition-all duration-300"
-                  />
-                  {wedge.isEaten && !showGhostGrid && (
-                     <text x={textPos.x} y={textPos.y} fill="#A38A60" fontSize="14" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
-                       EATEN
-                     </text>
-                  )}
-                  {showTargetPiece && wedge.isTarget && interactiveMode !== 'count' && (
-                     <text x={textPos.x} y={textPos.y} fill="#92400E" fontSize="28" fontWeight="900" textAnchor="middle" dominantBaseline="middle">
-                       1
-                     </text>
-                  )}
-                  {interactiveMode === 'count' && isCounted && (
-                     <text x={textPos.x} y={textPos.y} fill="#064E3B" fontSize="28" fontWeight="900" textAnchor="middle" dominantBaseline="middle">
-                       {countedPieces.indexOf(wedge.id) + 1}
-                     </text>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-      </div>
-    );
-  };
-
-  // Guided Lesson Data
-  const stepsData = [
-    // --- PROBLEM 1: BROWNIES (1/4 ÷ 3) ---
-    {
-      title: "Problem 1: The Brownie Pan",
-      content: "Imagine you baked a huge pan of brownies. But, your family already ate most of it! Let's look at what is left.",
-      visual: <ChefHat size={140} className="mx-auto text-[#5D4037] mb-6 animate-bounce drop-shadow-lg" />,
-      action: "Start Problem 1",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 1: The Leftovers",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          You only have <strong className="text-[#5D4037] bg-stone-200 px-2 rounded">1/4</strong> of the pan of brownies left. <br/><br/>
-          <span className="text-lg text-stone-500">The dark chocolate section is your brownie. The light, dotted spaces show the 3/4 of the pan that is already eaten!</span>
-        </div>
-      ),
-      visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />,
-      action: "Next Step",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 2: Time to Share",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          You want to share this 1/4 piece equally among yourself and 2 friends (<strong className="text-blue-600 bg-blue-100 px-2 rounded">3 people total</strong>).
-          <div className="flex justify-center items-center gap-4 mt-6 text-4xl font-black text-blue-800 bg-blue-50 p-6 rounded-2xl border-4 border-blue-200 shadow-sm">
-            <span>1/4</span> <span className="text-blue-300">&divide;</span> <span>3</span>
-          </div>
-        </div>
-      ),
-      visual: (
-        <div className="flex justify-center items-center gap-8 w-full">
-          <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />
-          <div className="flex flex-col gap-4">
-            {[1, 2, 3].map(i => <div key={i} className="bg-blue-100 p-3 rounded-full shadow-sm border-2 border-blue-200"><Users size={40} className="text-blue-600" /></div>)}
-          </div>
-        </div>
-      ),
-      action: "Get ready to cut!",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 3: Make the Cuts!",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          We need to cut the leftover brownie piece into <strong>3 equal slices</strong>.<br/><br/>
-          <span className="text-blue-600 font-bold bg-blue-50 p-2 rounded-lg block border border-blue-200">👉 Tap the brownie on the board to make the cuts!</span>
-        </div>
-      ),
-      visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={hasCut} showGhostGrid={false} showTargetPiece={hasCut} interactiveMode="cut" />,
-      action: "See the Whole Pan",
-      isNextDisabled: !hasCut 
-    },
-    {
-      title: "Step 4: Count the Pieces!",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          The lighter piece is your single slice. But what fraction of the <em>whole</em> pan is it?<br/><br/>
-          <span className="text-green-700 font-bold bg-green-50 p-2 rounded-lg block border border-green-200">👉 Tap EVERY piece inside the whole pan to count how many slices it takes to make a whole!</span>
-        </div>
-      ),
-      visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="count" />,
-      action: "Reveal Final Answer",
-      isNextDisabled: countedPieces.length < 12
-    },
-    {
-      title: "Step 5: The Final Answer",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          Great job counting! Because we split the 4 columns into 3 rows, there are <strong className="text-green-600">12 pieces total</strong> in the pan.<br/>
-          Your piece is 1 out of 12.<br/>
-          <div className="mt-6 p-6 bg-green-100 rounded-2xl border-4 border-green-300 text-center font-black text-5xl text-green-800 shadow-md">
-            1/4 &divide; 3 = 1/12
-          </div>
-        </div>
-      ),
-      visual: <FractionGrid theme="brownie" currentDenom={4} currentDivisor={3} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="none" />,
-      action: "Try Problem 2!"
-    },
-
-    // --- PROBLEM 2: PIZZA (1/2 ÷ 2) ---
-    {
-      title: "Problem 2: The Pizza Box",
-      content: "Let's try another one! Jacob ordered a large, rectangular school pizza. Let's look inside the cardboard box...",
-      visual: <Pizza size={140} className="mx-auto text-[#F59E0B] mb-6 animate-pulse drop-shadow-lg" />,
-      action: "Start Problem 2",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 1: The Leftovers",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          There is <strong className="text-[#D97706] bg-yellow-100 px-2 rounded">1/2</strong> of the pizza left in the box. <br/><br/>
-          <span className="text-lg text-stone-500">The yellow section is the leftover cheese pizza. The empty side shows the 1/2 of the pizza that was already eaten!</span>
-        </div>
-      ),
-      visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />,
-      action: "Next Step",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 2: Time to Share",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          Jacob wants to share the leftovers with his brother (<strong className="text-blue-600 bg-blue-100 px-2 rounded">2 people total</strong>).
-          <div className="flex justify-center items-center gap-4 mt-6 text-4xl font-black text-blue-800 bg-blue-50 p-6 rounded-2xl border-4 border-blue-200 shadow-sm">
-            <span>1/2</span> <span className="text-blue-300">&divide;</span> <span>2</span>
-          </div>
-        </div>
-      ),
-      visual: (
-        <div className="flex justify-center items-center gap-8 w-full">
-          <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={false} showGhostGrid={false} showTargetPiece={false} interactiveMode="none" />
-          <div className="flex flex-col gap-4">
-            {[1, 2].map(i => <div key={i} className="bg-blue-100 p-3 rounded-full shadow-sm border-2 border-blue-200"><Users size={40} className="text-blue-600" /></div>)}
-          </div>
-        </div>
-      ),
-      action: "Get ready to cut!",
-      isNextDisabled: false
-    },
-    {
-      title: "Step 3: Make the Cuts!",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          We need to cut the leftover pizza piece into <strong>2 equal slices</strong>.<br/><br/>
-          <span className="text-blue-600 font-bold bg-blue-50 p-2 rounded-lg block border border-blue-200">👉 Tap the pizza on the board to slice it!</span>
-        </div>
-      ),
-      visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={hasCut} showGhostGrid={false} showTargetPiece={hasCut} interactiveMode="cut" />,
-      action: "See the Whole Box",
-      isNextDisabled: !hasCut 
-    },
-    {
-      title: "Step 4: Count the Pieces!",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          The bright yellow piece is Jacob's slice. But what fraction of the <em>whole</em> pizza is it?<br/><br/>
-          <span className="text-green-700 font-bold bg-green-50 p-2 rounded-lg block border border-green-200">👉 Tap EVERY piece inside the whole box to count how many slices it takes to make a whole!</span>
-        </div>
-      ),
-      visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="count" />,
-      action: "Reveal Final Answer",
-      isNextDisabled: countedPieces.length < 4 // 2x2 grid = 4 pieces
-    },
-    {
-      title: "Step 5: The Final Answer",
-      content: (
-        <div className="text-2xl leading-relaxed">
-          Awesome! Because we split the 2 halves into 2 slices each, there are <strong className="text-green-600">4 pieces total</strong> in the box.<br/>
-          Jacob's piece is 1 out of 4.<br/>
-          <div className="mt-6 p-6 bg-green-100 rounded-2xl border-4 border-green-300 text-center font-black text-5xl text-green-800 shadow-md">
-            1/2 &divide; 2 = 1/4
-          </div>
-        </div>
-      ),
-      visual: <FractionCircle currentDenom={2} currentDivisor={2} showOriginalFraction={true} showCuts={true} showGhostGrid={true} showTargetPiece={true} interactiveMode="none" />,
-      action: "Try the Sandbox"
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-stone-200 text-stone-800 font-sans p-4 md:p-8 flex items-center justify-center select-none touch-manipulation">
-      {/* Expanded to max-w-7xl to comfortably fit on widescreen Smartboards without overlapping */}
-      <div className="w-full max-w-7xl bg-white rounded-[2rem] shadow-2xl overflow-hidden border-4 border-stone-300">
-        
-        {/* Header */}
-        <header className="bg-amber-500 text-white p-6 md:p-8 text-center shadow-md relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent mix-blend-overlay"></div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center justify-center gap-4 relative z-10 drop-shadow-md">
-            <Square fill="white" size={40} className="opacity-90"/>
-            Fraction Division Visualizer
-          </h1>
-        </header>
-
-        {/* Main Content Area */}
-        <div className="p-6 md:p-12">
-          
-          {/* Guided Lessons (Steps 0-11) */}
-          {step < 12 ? (
-            <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
-              <h2 className="text-4xl font-extrabold text-stone-800 mb-8 text-center border-b-4 border-amber-200 pb-4 inline-block">{stepsData[step].title}</h2>
-              
-              <div className="w-full max-w-3xl bg-stone-50 p-8 rounded-3xl border-2 border-stone-200 shadow-sm mb-10 text-center min-h-[160px] flex items-center justify-center">
-                {stepsData[step].content}
-              </div>
-              
-              <div className="w-full mb-12 flex justify-center">
-                {stepsData[step].visual}
-              </div>
-
-              {/* Navigation Controls */}
-              <div className="flex gap-6 w-full max-w-2xl h-20">
-                {step > 0 && (
-                  <button 
-                    onClick={prevStep}
-                    className="flex-1 text-2xl bg-stone-100 text-stone-600 font-bold rounded-2xl border-4 border-stone-200 hover:bg-stone-200 hover:text-stone-800 transition-all flex items-center justify-center gap-3 active:scale-95 touch-manipulation"
-                  >
-                    <ChevronLeft size={32} /> Back
+          return (
+            <div className="min-h-screen bg-stone-200 text-stone-800 font-sans p-4 md:p-8 flex items-center justify-center select-none touch-manipulation">
+              <div className="w-full max-w-7xl bg-white rounded-[2rem] shadow-2xl overflow-hidden border-4 border-stone-300">
+                <header className="bg-amber-500 text-white p-6 md:p-8 text-center shadow-md relative overflow-hidden flex items-center justify-center">
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent mix-blend-overlay"></div>
+                  <h1 className="text-4xl md:text-5xl font-black tracking-tight flex items-center justify-center gap-4 relative z-10 drop-shadow-md">
+                    <Square fill="white" size={40} className="opacity-90"/>
+                    Fraction Division Visualizer
+                  </h1>
+                  {/* Fullscreen Button */}
+                  <button onClick={toggleFullscreen} className="absolute right-6 top-1/2 -translate-y-1/2 bg-amber-600 hover:bg-amber-700 p-3 rounded-xl shadow-inner transition-colors z-20 flex items-center gap-2 font-bold" title="Toggle Fullscreen">
+                    {isFullscreen ? <><Minimize size={24}/> Exit</> : <><Maximize size={24}/> Fullscreen</>}
                   </button>
-                )}
-                
-                {!stepsData[step].isNextDisabled ? (
-                   <button 
-                     onClick={nextStep}
-                     className="flex-[2] text-2xl bg-amber-500 text-white font-extrabold rounded-2xl border-b-8 border-amber-700 hover:bg-amber-400 hover:border-amber-600 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center gap-3 touch-manipulation animate-in slide-in-from-bottom-4"
-                   >
-                     {stepsData[step].action} {step < 11 && <ChevronRight size={32} />}
-                   </button>
-                ) : (
-                   <div className="flex-[2] text-xl bg-stone-100 text-stone-400 font-bold rounded-2xl border-4 border-stone-200 border-dashed flex items-center justify-center flex-col touch-manipulation">
-                     Follow instructions above to continue!
-                   </div>
-                )}
-              </div>
-              
-              {/* Progress dots - Split into two sections for the two problems */}
-              <div className="flex gap-3 mt-10 w-full max-w-2xl justify-center items-center">
-                <div className="flex gap-2">
-                  {[0,1,2,3,4,5].map(dot => (
-                    <div key={dot} className={`h-3 rounded-full transition-all duration-500 ${step === dot ? 'w-10 bg-amber-500' : (step > dot ? 'w-4 bg-amber-200' : 'w-4 bg-stone-200')}`} />
-                  ))}
-                </div>
-                <div className="w-px h-8 bg-stone-300 mx-2"></div>
-                <div className="flex gap-2">
-                  {[6,7,8,9,10,11].map(dot => (
-                    <div key={dot} className={`h-3 rounded-full transition-all duration-500 ${step === dot ? 'w-10 bg-amber-500' : (step > dot ? 'w-4 bg-amber-200' : 'w-4 bg-stone-200')}`} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            
-            /* Sandbox Mode - Smartboard Optimized */
-            <div className="animate-in slide-in-from-right duration-500">
-              <div className="flex justify-between items-center mb-8 border-b-4 border-stone-100 pb-6">
-                <h2 className="text-4xl font-extrabold text-stone-800 flex items-center gap-4">
-                  <RefreshCcw size={36} className="text-amber-500" />
-                  Sandbox Mode
-                </h2>
-                <button 
-                  onClick={() => changeStep(0)}
-                  className="text-stone-500 hover:text-amber-600 font-bold text-xl px-6 py-3 rounded-xl bg-stone-100 hover:bg-amber-50 transition-colors flex items-center gap-2 touch-manipulation"
-                >
-                  Restart Lesson
-                </button>
-              </div>
-              
-              <div className="flex flex-col lg:flex-row gap-8 xl:gap-12 items-stretch">
-                
-                {/* Controls Area - Using flex-1 to distribute width evenly */}
-                <div className="flex-1 bg-stone-50 p-6 xl:p-8 rounded-3xl border-2 border-stone-200 shadow-sm space-y-10 flex flex-col justify-center">
-                  <p className="text-xl text-stone-600 text-center font-medium">Use the + and - buttons to build your own fraction division problem.</p>
-                  
-                  <div className="flex flex-wrap justify-center gap-4 mb-2">
-                    <button 
-                      onClick={() => setSandboxTheme('brownie')}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${sandboxTheme === 'brownie' ? 'bg-[#5D4037] text-white shadow-md' : 'bg-stone-200 text-stone-500 hover:bg-stone-300'}`}
-                    >
-                      <Square size={20} /> Rectangle Pan
-                    </button>
-                    <button 
-                      onClick={() => setSandboxTheme('pizza')}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${sandboxTheme === 'pizza' ? 'bg-[#F59E0B] text-white shadow-md' : 'bg-stone-200 text-stone-500 hover:bg-stone-300'}`}
-                    >
-                      <Pizza size={20} /> Round Pizza
-                    </button>
-                  </div>
+                </header>
 
-                  <div className="flex flex-wrap xl:flex-nowrap justify-center items-center gap-6 xl:gap-10">
-                    <TouchStepper 
-                      label="Starting Fraction"
-                      value={sandboxDenom} 
-                      min={2} max={6} 
-                      onChange={setSandboxDenom}
-                      colorClass="text-amber-600"
-                      highlightClass="text-amber-600 hover:text-amber-700"
-                    />
-                    
-                    <div className="text-4xl text-stone-300 font-black mt-6">&divide;</div>
-
-                    <TouchStepper 
-                      label="Divide By (People)"
-                      value={sandboxDivisor} 
-                      min={2} max={6} 
-                      onChange={setSandboxDivisor}
-                      colorClass="text-blue-600"
-                      highlightClass="text-blue-600 hover:text-blue-700"
-                    />
-                  </div>
-
-                  {/* Smartboard Equation Readout */}
-                  <div className="mt-4 pt-8 border-t-4 border-stone-100 text-center">
-                    <h3 className="text-lg font-black text-stone-400 uppercase tracking-widest mb-6">The Math Equation</h3>
-                    <div className="text-5xl font-black flex items-center justify-center gap-6 text-stone-700 flex-wrap">
-                      <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-2xl border-4 border-amber-200 shadow-sm">
-                        <div className="border-b-4 border-amber-800 px-3 pb-1 leading-none">1</div>
-                        <div className="leading-none mt-2 pt-1">{sandboxDenom}</div>
+                <div className="p-6 md:p-12">
+                  {step < 12 ? (
+                    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                      <h2 className="text-4xl font-extrabold text-stone-800 mb-8 text-center border-b-4 border-amber-200 pb-4 inline-block">{stepsData[step].title}</h2>
+                      <div className="w-full max-w-3xl bg-stone-50 p-8 rounded-3xl border-2 border-stone-200 shadow-sm mb-10 text-center min-h-[160px] flex items-center justify-center">{stepsData[step].content}</div>
+                      <div className="w-full mb-12 flex justify-center">{stepsData[step].visual}</div>
+                      <div className="flex gap-6 w-full max-w-2xl h-20">
+                        {step > 0 && ( <button onClick={prevStep} className="flex-1 text-2xl bg-stone-100 text-stone-600 font-bold rounded-2xl border-4 border-stone-200 hover:bg-stone-200 hover:text-stone-800 transition-all flex items-center justify-center gap-3 active:scale-95 touch-manipulation"><ChevronLeft size={32} /> Back</button> )}
+                        {!stepsData[step].isNextDisabled ? ( <button onClick={nextStep} className="flex-[2] text-2xl bg-amber-500 text-white font-extrabold rounded-2xl border-b-8 border-amber-700 hover:bg-amber-400 hover:border-amber-600 active:border-b-0 active:translate-y-2 transition-all flex items-center justify-center gap-3 touch-manipulation animate-in slide-in-from-bottom-4">{stepsData[step].action} {step < 11 && <ChevronRight size={32} />}</button> ) : ( <div className="flex-[2] text-xl bg-stone-100 text-stone-400 font-bold rounded-2xl border-4 border-stone-200 border-dashed flex items-center justify-center flex-col touch-manipulation">Follow instructions above to continue!</div> )}
                       </div>
-                      <span className="text-stone-400 font-normal">&divide;</span>
-                      <div className="bg-blue-100 text-blue-800 px-6 py-4 rounded-2xl border-4 border-blue-200 shadow-sm flex items-center">
-                        {sandboxDivisor}
-                      </div>
-                      <span className="text-stone-400 font-normal">=</span>
-                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-2xl border-4 border-green-300 shadow-sm shadow-green-200/50">
-                        <div className="border-b-4 border-green-800 px-3 pb-1 leading-none">1</div>
-                        <div className="leading-none mt-2 pt-1">{sandboxDenom * sandboxDivisor}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Visualizer Area */}
-                <div className="flex-1 flex flex-col items-center justify-center bg-white p-6 xl:p-8 rounded-3xl border-4 border-stone-100 shadow-sm min-h-[500px] overflow-hidden">
-                  {sandboxTheme === 'brownie' ? (
-                    <FractionGrid 
-                      theme="brownie"
-                      currentDenom={sandboxDenom} 
-                      currentDivisor={sandboxDivisor} 
-                      showOriginalFraction={true} 
-                      showCuts={true} 
-                      showGhostGrid={true} 
-                      showTargetPiece={true} 
-                      interactiveMode="none" 
-                    />
-                  ) : (
-                    <FractionCircle 
-                      currentDenom={sandboxDenom} 
-                      currentDivisor={sandboxDivisor} 
-                      showOriginalFraction={true} 
-                      showCuts={true} 
-                      showGhostGrid={true} 
-                      showTargetPiece={true} 
-                      interactiveMode="none" 
-                    />
-                  )}
-                  
-                  <div className="mt-10 text-center max-w-md text-stone-600 text-2xl leading-relaxed">
-                    <p>
-                      When you divide <strong className="text-amber-600">1/{sandboxDenom}</strong> into <strong className="text-blue-600">{sandboxDivisor}</strong> pieces, 
-                      you multiply to find the total slices in the whole pan: 
-                      <span className="block mt-4 font-black text-3xl text-green-700 bg-green-50 p-4 rounded-xl border-2 border-green-200">
-                        {sandboxDenom} &times; {sandboxDivisor} = {sandboxDenom * sandboxDivisor} total pieces.
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+                      <div className="flex gap-3 mt-10 w-full max-w-2xl justify-center items-center">
+                        <div className="flex gap-2">{[0,1,2,3,4,5].map(dot => ( <div key={dot} className={`h-3 rounded-full transition-all duration-500 ${step === dot ? 'w-10 bg-amber-500' : (step > dot ? 'w-4 bg-amber-200' : 'w-4 bg-stone-200')}`} /> ))}</div>
+                        <div className="w-px h-8 bg-stone-300 mx-2"></div>
+                        <div className="flex gap-2">{[6,7,8,9,10,11].map(dot => ( <div key={dot} className={`h-3 rounded-full transition-all duration-500 ${step === dot ? 'w-10 bg-amber-500' : (step > dot ? 'w-4 bg-amber-200' : 'w-
